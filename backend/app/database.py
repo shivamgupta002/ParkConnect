@@ -13,6 +13,17 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 
 from app.config import settings
+from app.models import (
+    User,
+    Vehicle,
+    QRCode,
+    Call,
+    Report,
+    Notification,
+    Subscription,
+    Payment,
+    AuditLog,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +44,17 @@ async def init_db() -> None:
 
     await init_beanie(
         database=database,
-        document_models=[],  # Phase 1 will add: User, Vehicle, QRCode, ...
+        document_models=[
+            User,
+            Vehicle,
+            QRCode,
+            Call,
+            Report,
+            Notification,
+            Subscription,
+            Payment,
+            AuditLog,
+        ],
     )
 
     logger.info("Beanie initialized against database: %s", database.name)

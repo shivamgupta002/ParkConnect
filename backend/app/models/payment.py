@@ -1,3 +1,4 @@
+"""Payment model — one Razorpay order/payment tied to a subscription upgrade."""
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -6,8 +7,6 @@ from pydantic import Field
 
 from app.models.subscription import Subscription
 from app.models.user import User
-
-PaymentStatus = Literal["created", "paid", "failed"]
 
 
 class Payment(Document):
@@ -18,8 +17,7 @@ class Payment(Document):
     provider: str = "razorpay"
     provider_order_id: Optional[str] = None
     provider_payment_id: Optional[str] = None
-    status: PaymentStatus = "created"
-
+    status: Literal["created", "paid", "failed"] = "created"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:

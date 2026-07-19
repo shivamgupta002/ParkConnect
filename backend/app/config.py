@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     # touching code (see Phase 14 hardening pass).
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
+    # --- Phase 2: Auth (OTP + JWT) ---
+    TWILIO_ACCOUNT_SID: str
+    TWILIO_AUTH_TOKEN: str
+    TWILIO_VERIFY_SERVICE_SID: str
+
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

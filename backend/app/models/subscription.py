@@ -1,3 +1,4 @@
+"""Subscription model — a user's current plan (free/premium)."""
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -6,14 +7,11 @@ from pydantic import Field
 
 from app.models.user import User
 
-SubscriptionPlan = Literal["free", "premium"]
-SubscriptionStatus = Literal["active", "expired", "cancelled"]
-
 
 class Subscription(Document):
     user: Link[User]
-    plan: SubscriptionPlan = "free"
-    status: SubscriptionStatus = "active"
+    plan: Literal["free", "premium"] = "free"
+    status: Literal["active", "expired", "cancelled"] = "active"
     start_date: datetime = Field(default_factory=datetime.utcnow)
     end_date: Optional[datetime] = None
 

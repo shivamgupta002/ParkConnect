@@ -1,17 +1,21 @@
 """
 ParkConnect backend entrypoint.
 
-Phase 0 scope only: app wiring, CORS, DB init on startup, and a single
-GET /health endpoint. No business logic, no auth, no models beyond the
-empty Beanie registration in database.py.
+Phase 0: app wiring, CORS, DB init on startup, GET /health.
+Phase 2: auth router mounted, slowapi rate limiting wired in globally.
 """
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import settings
+from app.core.rate_limit import limiter
 from app.database import init_db
+from app.routers import auth
 
 
 @asynccontextmanager
@@ -29,6 +33,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# --- Rate limiting (slowapi) ---
+# app.state.limiter + the exception handler + SlowAPIMiddleware together are
+# what actually make @limiter.limit(...) decorators on individual routes
+# return 429 responses instead of silently no-op'ing.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 # CORS origins are read from config so production can add the real frontend
 # domain later without a code change (see Settings.cors_origins).
 app.add_middleware(
@@ -39,9 +51,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+
 
 @app.get("/health")
 async def health_check():
     """Basic liveness check, also used by the frontend to prove the two
     servers are wired together during Phase 0."""
     return {"status": "ok"}
+

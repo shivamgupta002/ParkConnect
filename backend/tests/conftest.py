@@ -1,24 +1,60 @@
 """
-Test-suite-wide fixtures and compatibility shims.
+Shared pytest fixtures.
 
-Compatibility note: newer Beanie versions (2.x) call
-`database.list_collection_names(authorizedCollections=True, nameOnly=True)` during
-init_beanie's startup, using kwargs that real MongoDB (via Motor) supports fine.
-mongomock's synchronous Database.list_collection_names() doesn't accept those
-kwargs yet, which mongomock-motor just proxies straight through -- so it blows up
-with a TypeError in tests only, never in production (which talks to a real Mongo
-via Motor, not mongomock). This shim makes the mock accept and ignore those
-extra kwargs so our fully in-memory test database keeps working across Beanie
-upgrades. Safe to delete once mongomock/mongomock-motor ship a fix upstream.
+Uses mongomock-motor for an in-memory MongoDB substitute so the test suite
+never needs a real MongoDB server running. Beanie is (re)initialized fresh
+for every test function against a uniquely-named mock database, so tests
+never leak state into one another regardless of execution order.
 """
+import uuid
 
-import mongomock.database
+import pytest
+from beanie import init_beanie
+from mongomock_motor import AsyncMongoMockClient
 
-_original_list_collection_names = mongomock.database.Database.list_collection_names
+from app.core.rate_limit import limiter
+from app.models import (
+    User,
+    Vehicle,
+    QRCode,
+    Call,
+    Report,
+    Notification,
+    Subscription,
+    Payment,
+    AuditLog,
+)
+
+ALL_MODELS = [
+    User,
+    Vehicle,
+    QRCode,
+    Call,
+    Report,
+    Notification,
+    Subscription,
+    Payment,
+    AuditLog,
+]
 
 
-def _compatible_list_collection_names(self, filter=None, session=None, **_ignored_kwargs):
-    return _original_list_collection_names(self, filter=filter, session=session)
+@pytest.fixture(autouse=True)
+async def init_test_db():
+    """
+    Fresh in-memory database per test. autouse=True means every test in the
+    suite gets an isolated Beanie/Mongo state without needing to remember to
+    request this fixture explicitly.
 
+    Also resets the shared slowapi rate limiter's storage between tests —
+    otherwise every test shares the same client IP (127.0.0.1) against the
+    TestClient, and a rate limit hit in one test would bleed into the next.
+    Tests that specifically exercise rate limiting (test_sixth_login_...)
+    still work correctly since the limit is exhausted and checked entirely
+    within that single test.
+    """
+    limiter.reset()
 
-mongomock.database.Database.list_collection_names = _compatible_list_collection_names
+    client = AsyncMongoMockClient()
+    db_name = f"parkconnect_test_{uuid.uuid4().hex}"
+    await init_beanie(database=client[db_name], document_models=ALL_MODELS)
+    yield

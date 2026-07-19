@@ -1,3 +1,4 @@
+"""Report model — public complaint/emergency report against a vehicle."""
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -6,17 +7,13 @@ from pydantic import Field
 
 from app.models.vehicle import Vehicle
 
-ReportType = Literal["wrong_parking", "lights_on", "accident", "emergency", "other"]
-ReportStatus = Literal["open", "reviewed", "resolved"]
-
 
 class Report(Document):
     vehicle: Link[Vehicle]
-    report_type: ReportType
+    report_type: Literal["wrong_parking", "lights_on", "accident", "emergency", "other"]
     message: str
     reporter_contact: Optional[str] = None
-    status: ReportStatus = "open"
-
+    status: Literal["open", "reviewed", "resolved"] = "open"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
