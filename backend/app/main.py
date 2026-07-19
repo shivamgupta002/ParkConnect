@@ -15,7 +15,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import settings
 from app.core.rate_limit import limiter
 from app.database import init_db
-from app.routers import auth
+from app.routers import auth, vehicles
 
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(vehicles.router)
 
 
 @app.get("/health")
