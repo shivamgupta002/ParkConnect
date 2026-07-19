@@ -1,0 +1,40 @@
+"""
+Application configuration.
+
+Settings are read from a `.env` file in the backend/ directory (see .env.example
+for the full list of variables with explanations). Using pydantic-settings means
+every setting is validated and typed at startup instead of failing deep inside
+some unrelated request handler later.
+"""
+from typing import List
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    # --- Core / Phase 0 ---
+    MONGODB_URI: str
+    JWT_SECRET_KEY: str
+    JWT_REFRESH_SECRET_KEY: str
+    FRONTEND_URL: str = "http://localhost:3000"
+    BACKEND_URL: str = "http://localhost:8000"
+
+    # CORS: comma-separated list of allowed origins. Defaults to local dev only;
+    # production deployments add the real frontend domain via the env var without
+    # touching code (see Phase 14 hardening pass).
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parsed list form of ALLOWED_ORIGINS for CORSMiddleware."""
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
+
+
+# Single shared settings instance, imported wherever config values are needed.
+settings = Settings()
