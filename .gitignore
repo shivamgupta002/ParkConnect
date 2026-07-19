@@ -10,7 +10,7 @@ venv/
 htmlcov/
 notes.txt
 
-readme0.md
+readme*.md
 
 # --- Environment secrets (never commit real values) ---
 .env
