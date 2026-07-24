@@ -11,6 +11,7 @@ htmlcov/
 notes.txt
 
 readme*.md
+note.txt
 
 # --- Environment secrets (never commit real values) ---
 .env
