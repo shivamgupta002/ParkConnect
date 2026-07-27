@@ -17,6 +17,8 @@ from app.core.rate_limit import limiter
 from app.database import init_db
 from app.routers import auth, vehicles, qr
 
+from app.routers import calls  # add alongside your other router imports
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,7 +57,7 @@ app.include_router(auth.router)
 app.include_router(vehicles.router)
 app.include_router(qr.vehicle_qr_router)
 app.include_router(qr.public_scan_router)
-
+app.include_router(calls.router)
 
 @app.get("/health")
 async def health_check():

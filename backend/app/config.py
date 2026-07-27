@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
 
+    # --- Phase 5: Twilio Voice (call masking) ---
+    TWILIO_PHONE_NUMBER: str = ""  # the masking number both scanner and owner see as caller ID
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

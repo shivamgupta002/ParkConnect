@@ -1,4 +1,5 @@
 """Call model — one masked-call attempt/session between a scanner and an owner."""
+
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -17,8 +18,6 @@ class Call(Document):
         "initiating", "ringing", "in-progress", "completed", "no-answer", "failed"
     ] = "initiating"
     duration_seconds: Optional[int] = None
-    # Deliberately redacted before storage (see Phase 5) — never the full
-    # scanner number, e.g. "+91******89".
     scanner_masked_number: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     ended_at: Optional[datetime] = None

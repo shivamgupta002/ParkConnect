@@ -8,12 +8,21 @@ single module instead of reaching into the Twilio client internals.
 import logging
 
 from twilio.rest import Client
+from twilio.request_validator import RequestValidator
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Reuse a single Client instance across the module — same pattern as the
+# Verify client from Phase 2. Voice calls and OTP both go through Twilio's
+# main REST client.
 _client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+# RequestValidator is used to verify X-Twilio-Signature on inbound webhooks
+# (twiml + status callbacks). Kept as a module-level singleton for the same
+# reason as _client.
+_validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
 
 
 def send_otp(phone_number: str) -> None:
@@ -47,3 +56,30 @@ def check_otp(phone_number: str, code: str) -> bool:
         settings.TWILIO_VERIFY_SERVICE_SID
     ).verification_checks.create(to=phone_number, code=code)
     return check.status == "approved"
+
+def initiate_call(to: str, twiml_url: str, status_callback_url: str) -> str:
+    """
+    Places an outbound call to `to` (the scanner's phone). When answered,
+    Twilio requests TwiML from `twiml_url`, which is where we bridge to the
+    owner's real number. Status updates are posted to `status_callback_url`.
+ 
+    Returns the Twilio Call SID.
+    """
+    call = _client.calls.create(
+        to=to,
+        from_=settings.TWILIO_PHONE_NUMBER,
+        url=twiml_url,
+        status_callback=status_callback_url,
+        status_callback_event=["initiated", "ringing", "answered", "completed"],
+    )
+    return call.sid
+ 
+ 
+def validate_twilio_signature(url: str, params: dict, signature: str) -> bool:
+    """
+    Verifies that an inbound webhook request genuinely came from Twilio,
+    using the X-Twilio-Signature header. `url` must be the exact, full
+    public URL Twilio was configured to call (including scheme/host/path),
+    and `params` the form-encoded POST body Twilio sent.
+    """
+    return _validator.validate(url, params, signature)
