@@ -33,7 +33,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     # --- Phase 4: QR codes ---
-    CLOUDINARY_URL: str = ""
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

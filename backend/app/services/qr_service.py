@@ -24,7 +24,14 @@ from app.models.vehicle import Vehicle
 # but we pass it explicitly from settings so the app fails at startup (via
 # Settings validation) rather than silently no-op-ing an upload later if the
 # env var is missing.
-cloudinary.config(cloudinary_url=settings.CLOUDINARY_URL)
+
+# cloudinary.config(cloudinary_url=settings.CLOUDINARY_URL) 
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
+
 
 
 def generate_qr_png_bytes(data: str) -> bytes:
