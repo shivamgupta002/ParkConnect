@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Vehicle } from "@/lib/validation/vehicle";
 
+// Normalizes whatever shape the backend returns into a plain array.
+function extractVehicles(payload: any): Vehicle[] {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.vehicles)) return payload.vehicles;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+}
+
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,9 +26,10 @@ export default function VehiclesPage() {
       const res = await fetch("/api/vehicles?limit=100");
       const json = await res.json();
       if (!res.ok) throw new Error(json.detail || "Could not load vehicles.");
-      setVehicles(json.items ?? json); // handles either {items:[...]} or a raw array
+      setVehicles(extractVehicles(json));
     } catch (err: any) {
       setError(err.message);
+      setVehicles([]);
     } finally {
       setLoading(false);
     }
@@ -47,11 +57,7 @@ export default function VehiclesPage() {
   };
 
   const activeCount = vehicles.filter((v) => v.is_active).length;
-  const atFreeLimit = activeCount >= 1; // Phase 3: free plan = 1 vehicle.
-  // NOTE: we don't know the user's plan here yet (Phase 9 wires
-  // /subscriptions/me into the dashboard) — for now this disables "Add"
-  // only as a soft hint once they already have 1; the backend is the
-  // real enforcement point and will 403 correctly for free users regardless.
+  const atFreeLimit = activeCount >= 1;
 
   return (
     <div className="min-h-screen bg-sky-50 px-4 py-8">

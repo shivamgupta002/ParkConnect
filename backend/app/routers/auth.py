@@ -12,12 +12,13 @@ Business rules worth calling out (see individual endpoints for detail):
 """
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.config import settings
 from app.core import security
 from app.core.rate_limit import limiter
 from app.models.subscription import Subscription
+from app.core.deps import get_current_user
 from app.models.user import User
 from app.schemas.auth import (
     AccessTokenResponse,
@@ -192,3 +193,15 @@ async def reset_password(body: ResetPasswordRequest):
     await user.save()
 
     return MessageResponse(message="Password has been reset successfully.")
+
+
+@router.get("/me")
+async def get_me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": str(current_user.id),
+        "full_name": current_user.full_name,
+        "email": current_user.email,
+        "phone_number": current_user.phone_number,
+        "is_verified": current_user.is_verified,
+        "is_premium": current_user.is_premium,
+    }

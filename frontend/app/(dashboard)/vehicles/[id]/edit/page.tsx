@@ -1,3 +1,4 @@
+// frontend/app/(dashboard)/vehicles/[id]/edit/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -26,27 +27,46 @@ export default function EditVehiclePage() {
   } = useForm<VehicleInput>({ resolver: zodResolver(vehicleSchema) });
 
   useEffect(() => {
-    fetch(`/api/vehicles/${params.id}`)
-      .then((res) => res.json())
-      .then((data) => {
+    let cancelled = false;
+
+    async function loadVehicle() {
+      setFetching(true);
+      setServerError(null);
+      try {
+        const res = await fetch(`/api/vehicles/${params.id}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || "Could not load vehicle.");
+        }
+
+        if (cancelled) return;
+
         reset({
-          vehicle_type: data.vehicle_type,
-          vehicle_number: data.vehicle_number,
-          brand: data.brand,
-          model: data.model,
-          color: data.color,
-          emergency_contact: data.emergency_contact,
+          vehicle_type: data.vehicle_type ?? "car",
+          vehicle_number: data.vehicle_number ?? "",
+          brand: data.brand ?? "",
+          model: data.model ?? "",
+          color: data.color ?? "",
+          emergency_contact: data.emergency_contact ?? "",
         });
-      })
-      .catch(() => setServerError("Could not load vehicle."))
-      .finally(() => setFetching(false));
+      } catch (err: any) {
+        if (!cancelled) setServerError(err.message || "Could not load vehicle.");
+      } finally {
+        if (!cancelled) setFetching(false);
+      }
+    }
+
+    loadVehicle();
+    return () => {
+      cancelled = true;
+    };
   }, [params.id, reset]);
 
   const onSubmit = async (data: VehicleInput) => {
     setServerError(null);
     setLoading(true);
     try {
-      // vehicle_number is immutable per Phase 3 spec — omit it from the update payload
       const { vehicle_number, ...updatable } = data;
       const res = await fetch(`/api/vehicles/${params.id}`, {
         method: "PUT",
@@ -67,7 +87,11 @@ export default function EditVehiclePage() {
   };
 
   if (fetching) {
-    return <div className="min-h-screen bg-sky-50 flex items-center justify-center">Loading…</div>;
+    return (
+      <div className="min-h-screen bg-sky-50 flex items-center justify-center">
+        <p className="text-slate-400">Loading vehicle…</p>
+      </div>
+    );
   }
 
   return (
