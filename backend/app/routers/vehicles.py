@@ -42,12 +42,6 @@ def _to_response(vehicle: Vehicle) -> VehicleResponse:
 
 
 async def _get_owned_vehicle_or_404(vehicle_id: str, current_user: User) -> Vehicle:
-    """Fetches a vehicle by id and confirms it belongs to current_user.
-
-    Returns the same 404 whether the id doesn't exist at all OR it belongs to
-    someone else — deliberately not distinguishing the two, so a caller can't
-    use this endpoint to probe which vehicle ids exist for other users.
-    """
     not_found = HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Vehicle not found",
@@ -59,14 +53,13 @@ async def _get_owned_vehicle_or_404(vehicle_id: str, current_user: User) -> Vehi
         # Malformed id -> same 404 rather than a raw DB/validation error.
         raise not_found
 
-    # fetch_links=False so `vehicle.owner` stays a Link (with .ref.id) rather
-    # than being auto-resolved into a full User object -- we only need the id
-    # to check ownership, not the owner's other fields.
     vehicle = await Vehicle.get(oid, fetch_links=False)
     if vehicle is None:
         raise not_found
 
-    if vehicle.owner.ref.id != current_user.id:
+    # Compare as strings to avoid PydanticObjectId/ObjectId type mismatches
+    # between vehicle.owner.ref.id and current_user.id.
+    if str(vehicle.owner.ref.id) != str(current_user.id):
         raise not_found
 
     return vehicle
