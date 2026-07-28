@@ -70,14 +70,15 @@ async def create_vehicle(
     body: VehicleCreateRequest,
     current_user: User = Depends(get_current_user),
 ):
-    # fetch_links=False: comparing Link fields against another document
-    # requires comparing DBRefs directly (via .to_ref()) rather than dotted
-    # "link.id == ..." field paths, which Beanie does not resolve into a
-    # working Mongo query against a Link field.
     subscription = await Subscription.find_one(
         Subscription.user == current_user.to_ref(), fetch_links=False
     )
     plan = subscription.plan if subscription else "free"
+
+    # Treat is_premium on the user document as an override, so admin-granted
+    # premium status works even without a matching subscriptions record.
+    if current_user.is_premium:
+        plan = "premium"
 
     if plan == "free":
         active_count = await Vehicle.find(
@@ -93,27 +94,6 @@ async def create_vehicle(
                     "add more vehicles."
                 ),
             )
-
-    existing = await Vehicle.find_one(Vehicle.vehicle_number == body.vehicle_number)
-    if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A vehicle with this number is already registered.",
-        )
-
-    vehicle = Vehicle(
-        owner=current_user,
-        vehicle_type=body.vehicle_type,
-        vehicle_number=body.vehicle_number,
-        brand=body.brand,
-        model=body.model,
-        color=body.color,
-        emergency_contact=body.emergency_contact,
-    )
-    await vehicle.insert()
-
-    return _to_response(vehicle)
-
 
 @router.get("", response_model=VehicleListResponse)
 async def list_vehicles(
