@@ -5,6 +5,20 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
+function extractErrorMessage(detail: unknown, fallback: string): string {
+  if (typeof detail === "string" && detail.trim().length > 0) return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((d) =>
+        d && typeof d === "object" && "msg" in d
+          ? String((d as any).msg)
+          : null,
+      )
+      .filter(Boolean);
+    if (msgs.length > 0) return msgs.join(" ");
+  }
+  return fallback;
+}
 interface VehiclePublicInfo {
   vehicle_type: string;
   brand: string;
@@ -15,7 +29,11 @@ interface VehiclePublicInfo {
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 const staggerContainer: Variants = {
@@ -25,7 +43,11 @@ const staggerContainer: Variants = {
 
 const panelVariants: Variants = {
   collapsed: { height: 0, opacity: 0 },
-  open: { height: "auto", opacity: 1, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
+  open: {
+    height: "auto",
+    opacity: 1,
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  },
 };
 
 export default function PublicVehiclePage() {
@@ -124,7 +146,9 @@ export default function PublicVehiclePage() {
 function CallOwnerSection({ token }: { token: string }) {
   const [open, setOpen] = useState(false);
   const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState<"idle" | "calling" | "connected" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "calling" | "connected" | "error"
+  >("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleCall = async () => {
@@ -139,12 +163,16 @@ function CallOwnerSection({ token }: { token: string }) {
       const json = await res.json();
       if (res.status === 429) {
         setStatus("error");
-        setErrorMsg("Too many call attempts, please try again in a few minutes.");
+        setErrorMsg(
+          "Too many call attempts, please try again in a few minutes.",
+        );
         return;
       }
       if (!res.ok) {
         setStatus("error");
-        setErrorMsg(json.detail || "Could not place the call.");
+        setErrorMsg(
+          extractErrorMessage(json.detail, "Could not place the call."),
+        );
         return;
       }
       setStatus("connected");
@@ -191,7 +219,11 @@ function CallOwnerSection({ token }: { token: string }) {
                       className="mx-auto mb-2 w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 15,
+                      }}
                     >
                       <span className="text-teal-700">✓</span>
                     </motion.div>
@@ -200,7 +232,12 @@ function CallOwnerSection({ token }: { token: string }) {
                     </p>
                   </motion.div>
                 ) : (
-                  <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.div
+                    key="input"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
                     <p className="text-sm text-slate-600 mb-2">
                       Enter your phone number so we can connect your call
                     </p>
@@ -279,10 +316,14 @@ function ReportSection({ token }: { token: string }) {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.detail || "Could not submit report.");
+      if (!res.ok) {
+        setError(extractErrorMessage(json.detail, "Could not submit report."));
+        setSubmitting(false);
+        return;
+      }
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -338,7 +379,9 @@ function ReportSection({ token }: { token: string }) {
             className="overflow-hidden"
           >
             <div className="bg-white rounded-2xl p-5 border border-slate-200">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Issue type</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Issue type
+              </label>
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
@@ -351,7 +394,9 @@ function ReportSection({ token }: { token: string }) {
                 <option value="other">Other</option>
               </select>
 
-              <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Message
+              </label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
