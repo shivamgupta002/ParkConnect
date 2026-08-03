@@ -18,7 +18,8 @@ from app.database import init_db
 from app.routers import auth, vehicles, qr
 
 from app.routers import calls  # add alongside your other router imports
-
+from app.routers import notifications
+from app.routers import reports
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -58,6 +59,8 @@ app.include_router(vehicles.router)
 app.include_router(qr.vehicle_qr_router)
 app.include_router(qr.public_scan_router)
 app.include_router(calls.router)
+app.include_router(notifications.router)
+app.include_router(reports.router)
 
 @app.get("/health")
 async def health_check():

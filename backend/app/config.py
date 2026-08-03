@@ -38,7 +38,12 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str = ""
 
     # --- Phase 5: Twilio Voice (call masking) ---
-    TWILIO_PHONE_NUMBER: str = ""  # the masking number both scanner and owner see as caller ID
+    TWILIO_PHONE_NUMBER: str = ""  # the masking number both scanner and owner see as caller ID4
+
+    # --- Phase 6: Twilio Send Message (Report an Issue) ---
+    SENDGRID_API_KEY: str = ""
+    SENDGRID_FROM_EMAIL: str = "shivamgupta992909@gmail.com"
+    FIREBASE_CREDENTIALS_JSON: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
