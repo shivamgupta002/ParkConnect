@@ -43,9 +43,7 @@ async def get_current_user(
         raise unauthorized
 
     if user.is_suspended:
-        # Enforced here (Phase 8 will populate is_suspended via the admin
-        # panel) so a suspended account's existing tokens stop working
-        # immediately on their next request, not just on next login.
+        
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account suspended",

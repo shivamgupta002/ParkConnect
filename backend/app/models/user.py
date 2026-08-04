@@ -14,7 +14,7 @@ class User(Document):
     is_verified: bool = False
     is_admin: bool = False
     is_premium: bool = False
-    is_suspended: bool = False  # added ahead of Phase 8 admin suspend flow
+    is_suspended: bool = False  
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
